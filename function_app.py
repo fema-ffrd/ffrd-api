@@ -9,7 +9,7 @@ import json
 
 # For testing only, set connection string in app settings so it can be updated when storage keys are rotated
 # TODO: set app settings for access to S3?
-os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f"DefaultEndpointsProtocol=https;AccountName=stgfemanfipde;AccountKey=2/jULPxmyMdAnQ0I3hZt15hlNw1+b3QpzUHNRqCXTjwyFG+FQLZ6GQxNUKR61kVZcujyyORt7WmE+AStN9Xn3w==;EndpointSuffix=core.windows.net"
+os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f""
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 gdal.osr.UseExceptions()
