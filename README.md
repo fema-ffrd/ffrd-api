@@ -1,6 +1,6 @@
 # Introduction 
 An open-source API deployed as a Python Azure Function to allow a client to query for a raster value at a specified set of coordinates in a specified raster file
-(preferably in COG format). 
+(preferably in COG format). An alternate version of the API deployed as a FastAPI application (with associated requirements file) is available for users who don't have access to Microsoft Azure.
 
 # Running Locally using Visual Studio Code
 1.	Clone the repository to a local directory.
@@ -14,7 +14,7 @@ An open-source API deployed as a Python Azure Function to allow a client to quer
 # Calling the API
 POST https://{host}/api/get_values
 
-## Post body should be a JSON object
+## Post body should be a JSON object (schema defined in swagger.json)
 - 'file': a string containing the name of the file in the storage account, not the full path
 - 'bands': an array containing at least one integer indicating the raster band(s) to read data from
 - 'lat': a floating point latitude coordinate in decimal degrees
