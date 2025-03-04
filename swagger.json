@@ -1,0 +1,93 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "An open-source API deployed as a Python Azure Function to allow a client to query for a raster value at a specified set of coordinates in a specified raster file (preferably in COG format).",
+    "version": "1.0.0",
+    "title": "FFRD API",
+    "contact": {
+      "email": "robert.royall@stantec.com"
+    }
+  },
+  "host": "fema-nfip-api-dev.azurewebsites.net",
+  "basePath": "/api",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/api/get_values": {
+      "post": {
+        "tags": [
+          "api"
+        ],
+        "summary": "Retrieves a raster cell value at a specified spatial location",
+        "description": "",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "body",
+            "description": "JSON object describing the query",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/ApiResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Query": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "bands": {
+          "type": "array",
+          "minLength": 1,
+          "maxLength": 8,
+          "items": {
+            "type": "integer"
+          }
+        },
+        "lat": {
+          "type": "number",
+          "format": "float"
+        },
+        "lon": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "ApiResponse": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "band": {
+            "type": "integer"
+          },
+          "value": {
+            "type": "number",
+            "default": "null"
+          }
+        }
+      }
+    }
+  }
+}
