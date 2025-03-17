@@ -19,7 +19,7 @@
         "tags": [
           "api"
         ],
-        "summary": "Retrieves a raster cell value at a specified spatial location",
+        "summary": "Retrieves a raster cell value at a specified spatial location.",
         "description": "",
         "consumes": [
           "application/json"
@@ -47,6 +47,40 @@
           }
         }
       }
+    },
+    "/api/get_ci_values": {
+      "post": {
+        "tags": [
+          "api"
+        ],
+        "summary": "Converts post-processed information about hazards (mean, standard deviation, number to determine the associated confidence interval values.",
+        "description": "",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "body",
+            "description": "JSON object describing the query",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CIQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/CIResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -58,8 +92,7 @@
         },
         "bands": {
           "type": "array",
-          "minLength": 1,
-          "maxLength": 8,
+          "minItems": 1,
           "items": {
             "type": "integer"
           }
@@ -72,7 +105,48 @@
           "type": "number",
           "format": "float"
         }
-      }
+      },
+      "required": [
+        "file",
+        "bands",
+        "lat",
+        "lon"
+      ]
+    },
+    "CIQuery": {
+      "type": "object",
+      "properties": {
+        "haz_stats": {
+          "type": "object",
+          "required": [
+            "mean",
+            "std_dev"
+          ],
+          "properties": {
+            "mean": {
+              "type": "number",
+              "format": "float"
+            },
+            "std_dev": {
+              "type": "number",
+              "format": "float"
+            }
+          }
+        },
+        "realizations": {
+          "type": "integer"
+        },
+        "distribution": {
+          "type": "string"
+        },
+        "confidence_level": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "required": [
+        "haz_stats"
+      ]
     },
     "ApiResponse": {
       "type": "array",
@@ -86,6 +160,27 @@
             "type": "number",
             "default": "null"
           }
+        }
+      }
+    },
+    "CIResponse": {
+      "type": "object",
+      "properties": {
+        "lower_val": {
+          "type": "number",
+          "format": "float"
+        },
+        "upper_val": {
+          "type": "number",
+          "format": "float"
+        },
+        "lower_bound": {
+          "type": "number",
+          "format": "float"
+        },
+        "upper_bound": {
+          "type": "number",
+          "format": "float"
         }
       }
     }

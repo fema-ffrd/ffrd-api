@@ -34,5 +34,7 @@ def confidence_interval_values(haz_stats:dict,realizations:int = 5,distribution:
     #error
     std_error_low = z_lower*(haz_stats['std_dev']/math.sqrt(realizations))
     std_error_up = z_upper*(haz_stats['std_dev']/math.sqrt(realizations))
-    result =  {f'lower_'+'{:.2f}'.format(round(p,2))+'_pct':haz_stats['mean']+std_error_low,f'upper_'+'{:.2f}'.format(round(1-p,2))+'_pct':haz_stats['mean']+std_error_up}
+    lbound = '{:.2f}'.format(round(p,2))
+    ubound = '{:.2f}'.format(round(1-p,2))
+    result =  {f'lower_val':haz_stats['mean']+std_error_low,f'upper_val':haz_stats['mean']+std_error_up,f'lower_bound':lbound,f'upper_bound':ubound}
     return result

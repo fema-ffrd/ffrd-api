@@ -6,10 +6,11 @@ from affine import Affine
 import os
 import struct
 import json
+from ci import confidence_interval_values
 
 # For testing only, set connection string in app settings so it can be updated when storage keys are rotated
 # TODO: set app settings for access to S3?
-os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f""
+#os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f""
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 gdal.osr.UseExceptions()
@@ -94,3 +95,47 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
 
     # return the band values
     return func.HttpResponse(json.dumps(output), mimetype="application/json", status_code=200)
+
+@app.route(route="get_ci_values", methods=["POST"])
+def http_trigger_2(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    # Make sure we have all expected input parameters and that they are valid
+    try:
+        req_body = req.get_json()
+    except:
+        return func.HttpResponse("Please pass a JSON object with {'haz_stats': {'mean' (float), 'std_dev' (float)}, [optional] 'realizations' (int), [optional] 'distributions' (string), [optional] 'confidence_level' (float)} fields in the request body", status_code=400)  
+    else:         
+        haz_stats = req_body.get('haz_stats')
+        realizations = req_body.get('realizations') or 5
+        distribution = req_body.get('distribution') or 'normal'
+        confidence_level = req_body.get('confidence_level') or 0.9
+    
+    if not haz_stats or not isinstance(haz_stats, dict):
+        return func.HttpResponse(f"Please pass a haz_stats object in the request body", status_code=400)
+    try:
+        mean = haz_stats['mean']
+        std_dev = haz_stats['std_dev']
+    except:
+        return func.HttpResponse(f"Please both 'mean' (float) and 'std_dev' (float) properties in the 'haz_stats' parameter", status_code=400) 
+    
+    if not mean or not isinstance(mean, float):
+        return func.HttpResponse(f"Please pass a valid mean value in the haz_stats parameter", status_code=400)
+    
+    if not std_dev or not isinstance(std_dev, float):
+        return func.HttpResponse(f"Please pass a valid std_dev value in the haz_stats parameter", status_code=400)
+
+    if not realizations or not isinstance(realizations, int):
+        return func.HttpResponse(f"Please pass valid realizations value in the request body or omit this parameter", status_code=400)
+    
+    if not distribution or not isinstance(distribution, str):
+        return func.HttpResponse(f"Please pass a valid distribution value in the request body or omit this parameter", status_code=400)
+    
+    if not confidence_level or not isinstance(confidence_level, float):
+        return func.HttpResponse(f"Please pass a valid confidence_level value in the request body or omit this parameter", status_code=400)
+    
+    result = confidence_interval_values(haz_stats, realizations, distribution, confidence_level)
+    if result is None:
+        return func.HttpResponse(f"only normal distribution is currently implemented", status_code=400)
+    else:
+        return func.HttpResponse(json.dumps(result), mimetype="application/json", status_code=200)

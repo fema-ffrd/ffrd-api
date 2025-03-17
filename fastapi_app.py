@@ -1,3 +1,4 @@
+from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
@@ -9,9 +10,10 @@ from osgeo import gdal
 from affine import Affine
 import os
 import struct
+from ci import confidence_interval_values
 
 # TODO: set app settings for access to S3?
-os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f""
+#os.environ["AZURE_STORAGE_CONNECTION_STRING"] = f""
 
 gdal.osr.UseExceptions()
 
@@ -25,12 +27,27 @@ class OutputData(BaseModel):
     band: int
     value: float | None
 
+class InputCIHazStats(BaseModel):
+    mean: float
+    std_dev: float
+
+class InputCIData(BaseModel):
+    haz_stats: InputCIHazStats
+    realizations: Optional[int] = 5
+    distribution: Optional[str] = 'normal'
+    confidence_level: Optional[float] = 0.9
+
+class OutputCIData(BaseModel):
+    lower_val: float
+    upper_val: float
+    lower_bound: str
+    upper_bound: str
+
 app = FastAPI()
 
 @app.post("/get_values", response_model=list[OutputData])
 async def get_values(req: InputData):
     logging.info('API processed a request.')
-    print(req)
 
     # Make sure we have all expected input parameters and that they are valid
     try:
@@ -106,6 +123,40 @@ async def get_values(req: InputData):
 
     # return the band values
     return output
+
+@app.post("/get_ci_values", response_model=OutputCIData)
+async def get_ci_values(req: InputCIData):
+    logging.info('API processed a request.')
+    print(req)
+
+    # Make sure we have all expected input parameters and that they are valid
+    try:
+        haz_stats = req.haz_stats
+        realizations = req.realizations
+        distribution = req.distribution
+        confidence_level = req.confidence_level
+    except:
+        return Response("Please pass a JSON object with {'haz_stats': {'mean' (float), 'std_dev' (float)}, [optional] 'realizations' (int), [optional] 'distributions' (string), [optional] 'confidence_level' (float)} fields in the request body", status_code=400)  
+    
+    if not haz_stats or not isinstance(haz_stats, InputCIHazStats):
+        return Response(f"Please pass a haz_stats object in the request body", status_code=400)
+    try:
+        mean = haz_stats.mean
+        std_dev = haz_stats.std_dev
+    except:
+        return Response(f"Please both 'mean' (float) and 'std_dev' (float) properties in the 'haz_stats' parameter", status_code=400) 
+    
+    if not mean or not isinstance(mean, float):
+        return Response(f"Please pass a valid mean value in the haz_stats parameter", status_code=400)
+    
+    if not std_dev or not isinstance(std_dev, float):
+        return Response(f"Please pass a valid std_dev value in the haz_stats parameter", status_code=400)
+    
+    result = confidence_interval_values({'mean': haz_stats.mean, 'std_dev': haz_stats.std_dev}, realizations, distribution, confidence_level)
+    if result is None:
+        return Response(f"only normal distribution is currently implemented", status_code=400)
+    else:
+        return result
 
 if __name__ == "__main__":
     uvicorn.run(app=app, host="127.0.0.1", port=8000, log_level="debug")
